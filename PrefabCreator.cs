@@ -65,12 +65,12 @@ public class PrefabCreator : EditorWindow
         prefabObject.name = firstObject.name;
 
         object[] components = firstObject.GetComponents<Component>();
-        Debug.Log("Components: " + components.Length);
+        
         foreach (var component in components)
         {
             var firstObjectComponents = component.GetType().GetFields();
             var prefabObjectComponents = prefabObject.GetComponent(component.GetType()).GetType().GetFields();
-            Debug.Log("FirstObjectComp: " + firstObjectComponents.Length + " PrefabObjectComp: " + prefabObjectComponents.Length);
+            
             foreach (var field in firstObjectComponents)
             {
                 foreach (var prefabField in prefabObjectComponents)
@@ -80,13 +80,11 @@ public class PrefabCreator : EditorWindow
                         Debug.Log(field.Name + " " + prefabField.Name);
                         if (field.GetValue(component) == null)
                         {
-                            Debug.Log("Null");
                             continue;
                         }
                         object value = field.GetValue(component);
                         if ((object)value == (object)firstObject)
                         {
-                            Debug.Log("FirstObject");
                             field.SetValue(component, prefabObject);
                         }
                         prefabField.SetValue(prefabObject.GetComponent(component.GetType()), field.GetValue(component));
