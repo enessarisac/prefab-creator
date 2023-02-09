@@ -25,7 +25,7 @@ public class PrefabCreator : EditorWindow
         EditorGUILayout.Space(20f);
         GUILayout.Label("Please add only identical objects to the list. ", EditorStyles.boldLabel);
         GUILayout.Label("Saves the first object in the list as prefab.", EditorStyles.boldLabel);
-        GUILayout.Label("It saves the values ​​of the others and converts it to prefab (Except Unity Components).", EditorStyles.boldLabel);
+        GUILayout.Label("It saves the values of the others and converts it to prefab.", EditorStyles.boldLabel);
 
         EditorGUILayout.Space(20f);
 
