@@ -6,8 +6,7 @@ This asset converts the same objects in the scene into prefabs and preserves the
 
 v1.2
 
-Now also checks some Unity Components(Colliders, Rigidbody, Some of UI objects(Except TextMeshPro),Mesh Renderer, Skinned Mesh Renderer, Mesh Filter, Animator, Audio Source).
-Now controls different components separately inside objects.
+Now also checks some Unity Components(Colliders, Rigidbody, Some of UI objects(Except TextMeshPro),Mesh Renderer, Skinned Mesh Renderer, Mesh Filter, Animator, Audio Source), controls different components separately inside objects and set layer, tag, isStatic.
 
 How To Use :
 
