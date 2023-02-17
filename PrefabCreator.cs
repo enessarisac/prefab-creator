@@ -25,7 +25,7 @@ public class PrefabCreator : EditorWindow
         EditorGUILayout.Space(20f);
         GUILayout.Label("Please add only identical objects to the list. ", EditorStyles.boldLabel);
         GUILayout.Label("Saves the first object in the list as prefab.", EditorStyles.boldLabel);
-        GUILayout.Label("It saves the values of the others and converts it to prefab.", EditorStyles.boldLabel);
+        GUILayout.Label("It saves the values ​​of the others and converts it to prefab.", EditorStyles.boldLabel);
 
         EditorGUILayout.Space(20f);
 
@@ -66,7 +66,7 @@ public class PrefabCreator : EditorWindow
         SetFields(go, gameObject);
 
     }
-    void SetFields(GameObject oldObject, GameObject newObject)
+    void SetFields(GameObject oldObject, GameObject newObject, bool isChild = false)
     {
         if (oldObject.GetComponent<RectTransform>() == null)
         {
@@ -96,7 +96,6 @@ public class PrefabCreator : EditorWindow
         newObject.name = oldObject.name;
 
         object[] oldObjectComponents = oldObject.GetComponents<Component>();
-        Debug.Log("Components: " + oldObjectComponents.Length);
         if (IsCheckingUnityComponents)
         {
             CheckUnityComponents(newObject, oldObject);
@@ -109,7 +108,6 @@ public class PrefabCreator : EditorWindow
                 newObject.AddComponent(component.GetType());
             }
             var newObjectFields = newObject.GetComponent(component.GetType()).GetType().GetFields();
-            Debug.Log("FirstObjectComp: " + oldObjectFields.Length + " PrefabObjectComp: " + newObjectFields.Length);
 
             foreach (var field in oldObjectFields)
             {
@@ -118,16 +116,13 @@ public class PrefabCreator : EditorWindow
                 {
                     if (field.Name == prefabField.Name)
                     {
-                        Debug.Log(field.Name + " " + prefabField.Name);
                         if (field.GetValue(component) == null)
                         {
-                            Debug.Log("Null");
                             continue;
                         }
                         object value = field.GetValue(component);
                         if ((object)value == (object)oldObject)
                         {
-                            Debug.Log("FirstObject");
                             field.SetValue(component, newObject);
                         }
 
@@ -136,23 +131,48 @@ public class PrefabCreator : EditorWindow
                 }
             }
         }
-        DestroyImmediate(oldObject);
+        if (isChild is false)
+        {
+            int childCount = oldObject.transform.childCount;
+            if (oldObject.transform.childCount > 0)
+            {
+                if (oldObject.transform.childCount > newObject.transform.childCount)
+                {
+                    for (int i = newObject.transform.childCount; i < oldObject.transform.childCount; i++)
+                    {
+                        Debug.Log("Adding child to " + newObject.name);
+                        GameObject child = new GameObject();
+                        child.transform.SetParent(newObject.transform);
+                        SetFields(oldObject.transform.GetChild(i).gameObject, child, true);
+                    }
+                }
+            }
+            if (childCount == 0 && newObject.transform.childCount > 0)
+            {
+                Debug.Log("Destroying children of " + newObject.name);
+                PrefabUnpackMode unpackMode = PrefabUnpackMode.Completely;
+                PrefabUtility.UnpackPrefabInstance(newObject, unpackMode, InteractionMode.AutomatedAction);
+                for (int i = 0; i < newObject.transform.childCount; i++)
+                {
+                    DestroyImmediate(newObject.transform.GetChild(i).gameObject);
+                }
+            }
+            DestroyImmediate(oldObject);
+        }
+
     }
     public void CheckUnityComponents(GameObject newObject, GameObject oldObject)
     {
         var replacedObjectComponents = oldObject.GetComponents<Component>();
-        Debug.Log("Components: " + replacedObjectComponents.Length);
         foreach (var component in replacedObjectComponents)
         {
-            Debug.Log(component.GetType());
-            //check component is rigidbody
             if (component.GetType() == typeof(Rigidbody))
             {
                 if (newObject.GetComponent<Rigidbody>() == null)
                 {
                     newObject.AddComponent<Rigidbody>();
                 }
-                Debug.Log("Rigidbody");
+                var fields = component.GetType().GetFields();
                 Rigidbody rigidbody = (Rigidbody)component;
                 Rigidbody prefabRigidbody = newObject.GetComponent<Rigidbody>();
                 prefabRigidbody.mass = rigidbody.mass;
@@ -181,7 +201,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<BoxCollider>();
                 }
-                Debug.Log("BoxCollider");
                 BoxCollider boxCollider = (BoxCollider)component;
                 BoxCollider prefabBoxCollider = newObject.GetComponent<BoxCollider>();
                 prefabBoxCollider.center = boxCollider.center;
@@ -199,7 +218,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<MeshCollider>();
                 }
-                Debug.Log("MeshCollider");
                 MeshCollider meshCollider = (MeshCollider)component;
                 MeshCollider prefabMeshCollider = newObject.GetComponent<MeshCollider>();
                 prefabMeshCollider.sharedMesh = meshCollider.sharedMesh;
@@ -215,7 +233,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<SphereCollider>();
                 }
-                Debug.Log("SphereCollider");
                 SphereCollider sphereCollider = (SphereCollider)component;
                 SphereCollider prefabSphereCollider = newObject.GetComponent<SphereCollider>();
                 prefabSphereCollider.center = sphereCollider.center;
@@ -231,7 +248,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<CapsuleCollider>();
                 }
-                Debug.Log("CapsuleCollider");
                 CapsuleCollider capsuleCollider = (CapsuleCollider)component;
                 CapsuleCollider prefabCapsuleCollider = newObject.GetComponent<CapsuleCollider>();
                 prefabCapsuleCollider.center = capsuleCollider.center;
@@ -249,7 +265,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<MeshRenderer>();
                 }
-                Debug.Log("MeshRenderer");
                 MeshRenderer meshRenderer = (MeshRenderer)component;
                 MeshRenderer prefabMeshRenderer = newObject.GetComponent<MeshRenderer>();
                 prefabMeshRenderer.sharedMaterial = meshRenderer.sharedMaterial;
@@ -277,7 +292,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<MeshFilter>();
                 }
-                Debug.Log("MeshFilter");
                 MeshFilter meshFilter = (MeshFilter)component;
                 MeshFilter prefabMeshFilter = newObject.GetComponent<MeshFilter>();
                 prefabMeshFilter.sharedMesh = meshFilter.sharedMesh;
@@ -288,7 +302,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<SkinnedMeshRenderer>();
                 }
-                Debug.Log("SkinnedMeshRenderer");
                 SkinnedMeshRenderer skinnedMeshRenderer = (SkinnedMeshRenderer)component;
                 SkinnedMeshRenderer prefabSkinnedMeshRenderer = newObject.GetComponent<SkinnedMeshRenderer>();
                 prefabSkinnedMeshRenderer.material = skinnedMeshRenderer.material;
@@ -301,7 +314,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Animator>();
                 }
-                Debug.Log("Animator");
                 Animator animator = (Animator)component;
                 Animator prefabAnimator = newObject.GetComponent<Animator>();
                 prefabAnimator.runtimeAnimatorController = animator.runtimeAnimatorController;
@@ -314,7 +326,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<AudioSource>();
                 }
-                Debug.Log("AudioSource");
                 AudioSource audioSource = (AudioSource)component;
                 AudioSource prefabAudioSource = newObject.GetComponent<AudioSource>();
                 prefabAudioSource.clip = audioSource.clip;
@@ -346,7 +357,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Image>();
                 }
-                Debug.Log("Image");
                 Image image = (Image)component;
                 Image prefabImage = newObject.GetComponent<Image>();
                 prefabImage.sprite = image.sprite;
@@ -361,7 +371,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Text>();
                 }
-                Debug.Log("Text");
                 Text text = (Text)component;
                 Text prefabText = newObject.GetComponent<Text>();
                 prefabText.text = text.text;
@@ -386,7 +395,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<RawImage>();
                 }
-                Debug.Log("RawImage");
                 RawImage rawImage = (RawImage)component;
                 RawImage prefabRawImage = newObject.GetComponent<RawImage>();
                 prefabRawImage.texture = rawImage.texture;
@@ -401,7 +409,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Button>();
                 }
-                Debug.Log("Button");
                 Button button = (Button)component;
                 Button prefabButton = newObject.GetComponent<Button>();
                 prefabButton.transition = button.transition;
@@ -417,7 +424,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Toggle>();
                 }
-                Debug.Log("Toggle");
                 Toggle toggle = (Toggle)component;
                 Toggle prefabToggle = newObject.GetComponent<Toggle>();
                 prefabToggle.transition = toggle.transition;
@@ -434,7 +440,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Slider>();
                 }
-                Debug.Log("Slider");
                 Slider slider = (Slider)component;
                 Slider prefabSlider = newObject.GetComponent<Slider>();
                 prefabSlider.transition = slider.transition;
@@ -455,7 +460,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Scrollbar>();
                 }
-                Debug.Log("Scrollbar");
                 Scrollbar scrollbar = (Scrollbar)component;
                 Scrollbar prefabScrollbar = newObject.GetComponent<Scrollbar>();
                 prefabScrollbar.transition = scrollbar.transition;
@@ -475,7 +479,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<Dropdown>();
                 }
-                Debug.Log("Dropdown");
                 Dropdown dropdown = (Dropdown)component;
                 Dropdown prefabDropdown = newObject.GetComponent<Dropdown>();
                 prefabDropdown.transition = dropdown.transition;
@@ -497,7 +500,6 @@ public class PrefabCreator : EditorWindow
                 {
                     newObject.AddComponent<InputField>();
                 }
-                Debug.Log("InputField");
                 InputField inputField = (InputField)component;
                 InputField prefabInputField = newObject.GetComponent<InputField>();
                 prefabInputField.transition = inputField.transition;
@@ -515,11 +517,9 @@ public class PrefabCreator : EditorWindow
                 prefabInputField.characterLimit = inputField.characterLimit;
                 prefabInputField.onEndEdit = inputField.onEndEdit;
                 prefabInputField.enabled = inputField.enabled;
+
             }
 
         }
     }
 }
-
-
-
